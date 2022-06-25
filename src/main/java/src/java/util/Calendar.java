@@ -1671,6 +1671,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
         Calendar cal = null;
 
+        // 这边使用了一个工厂模式
         if (aLocale.hasExtensions()) {
             String caltype = aLocale.getUnicodeLocaleType("ca");
             if (caltype != null) {

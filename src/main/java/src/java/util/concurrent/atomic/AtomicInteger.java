@@ -153,6 +153,18 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * Atomically increments by one the current value.
      *
      * @return the previous value
+     *
+     *
+     * int var5;
+     * do {
+     *     // var1 表示当前对象 var2 表示内存中的偏移地址
+     *     // 获取当前对象在内存中的偏移地址上的值
+     *     var5 = this.getIntVolatile(var1, var2);
+     * } while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+     *
+     * valueOffSet在内存中的偏移地址
+     * cas底层 使用的 CPU 原语 ---(原语执行不可以被打断)
+     * 但是多核处理器需要加上 lock cmpxchg 因为多核不能保证原子
      */
     public final int getAndIncrement() {
         return unsafe.getAndAddInt(this, valueOffset, 1);
