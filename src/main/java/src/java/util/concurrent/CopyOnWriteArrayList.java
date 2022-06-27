@@ -385,6 +385,7 @@ public class CopyOnWriteArrayList<E>
 
     @SuppressWarnings("unchecked")
     private E get(Object[] a, int index) {
+        // 从数组中读
         return (E) a[index];
     }
 
@@ -432,13 +433,18 @@ public class CopyOnWriteArrayList<E>
      * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 可重入锁ReentrantLock
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 获取元素数组
             Object[] elements = getArray();
             int len = elements.length;
+            // 将现有数组的值复制到一个新数组 并且 长度+1 写时复制 写的时候复制一个新数组
+            // 读的时候读原数组
             Object[] newElements = Arrays.copyOf(elements, len + 1);
             newElements[len] = e;
+            // 替换为新数组
             setArray(newElements);
             return true;
         } finally {
