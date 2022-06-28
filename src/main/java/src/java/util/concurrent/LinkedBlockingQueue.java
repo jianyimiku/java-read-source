@@ -324,7 +324,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Inserts the specified element at the tail of this queue, waiting if
      * necessary for space to become available.
-     *
+     * 会阻塞
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
@@ -345,19 +345,24 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
              * out by lock), and we (or some other waiting put) are
              * signalled if it ever changes from capacity. Similarly
              * for all other uses of count in other wait guards.
+             *
+             * 如果队列满了 进行阻塞
              */
             while (count.get() == capacity) {
                 notFull.await();
             }
             enqueue(node);
             c = count.getAndIncrement();
-            if (c + 1 < capacity)
+            // 如果当前的元素个数小于容量 唤醒一个阻塞中的put线程
+            if (c + 1 < capacity) {
                 notFull.signal();
+            }
         } finally {
             putLock.unlock();
         }
-        if (c == 0)
+        if (c == 0) {
             signalNotEmpty();
+        }
     }
 
     /**
@@ -386,6 +391,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             }
             enqueue(new Node<E>(e));
             c = count.getAndIncrement();
+            // 如果未满 唤醒一个put方法 因为put是阻塞的
             if (c + 1 < capacity)
                 notFull.signal();
         } finally {
@@ -404,17 +410,21 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * When using a capacity-restricted queue, this method is generally
      * preferable to method {@link BlockingQueue#add add}, which can fail to
      * insert an element only by throwing an exception.
-     *
+     * 不会阻塞
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 插入元素不能为空
         if (e == null) throw new NullPointerException();
+        // 计算总元素个数的原子类
         final AtomicInteger count = this.count;
+        // 个数达到最大容量
         if (count.get() == capacity)
             return false;
         int c = -1;
         Node<E> node = new Node<E>(e);
         final ReentrantLock putLock = this.putLock;
+        // 加锁
         putLock.lock();
         try {
             if (count.get() < capacity) {
@@ -426,6 +436,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             putLock.unlock();
         }
+        // 如果c等于0 表示队列不为空了 那么唤醒notEmpty信号量
         if (c == 0)
             signalNotEmpty();
         return c >= 0;
@@ -438,6 +449,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
+            // 队列元素总数为0 等待
             while (count.get() == 0) {
                 notEmpty.await();
             }
@@ -448,8 +460,10 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             takeLock.unlock();
         }
-        if (c == capacity)
+        // 因为c拿到的是减去一之前的Count所以等于容量的时候 表示当前已经少了一个了 所以唤醒put线程
+        if (c == capacity) {
             signalNotFull();
+        }
         return x;
     }
 
